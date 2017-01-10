@@ -1,5 +1,8 @@
 package controllers
 
+import javax.inject.{Inject, Singleton}
+
+import dao.{AccountDao, OAuthAccessTokenDao, OAuthAuthorizationCodeDao, OAuthClientDao}
 import models._
 import play.api.libs.json.{JsObject, Json, Writes}
 import play.api.mvc.{Action, AnyContent, Controller}
@@ -8,7 +11,11 @@ import scala.concurrent.Future
 import scalaoauth2.provider.OAuth2ProviderActionBuilders._
 import scalaoauth2.provider._
 
-class OAuthController extends Controller with OAuth2Provider {
+@Singleton
+class OAuthController @Inject()(accountDao: AccountDao,
+                                oauthAccessTokenDao: OAuthAccessTokenDao,
+                                oauthAuthorizationCodeDao: OAuthAuthorizationCodeDao,
+                                oauthClientDao: OAuthClientDao) extends Controller with OAuth2Provider {
 
   implicit val authInfoWrites = new Writes[AuthInfo[Account]] {
     def writes(authInfo: AuthInfo[Account]): JsObject = {
@@ -45,12 +52,12 @@ class OAuthController extends Controller with OAuth2Provider {
 
     override def validateClient(request: AuthorizationRequest): Future[Boolean] = {
       val clientCredential = request.clientCredential.get
-      OauthClient.validate(clientCredential.clientId, clientCredential.clientSecret.getOrElse(""), request.grantType)
+      oauthClientDao.validate(clientCredential.clientId, clientCredential.clientSecret.getOrElse(""), request.grantType)
         .map(success => success)
     }
 
     override def getStoredAccessToken(authInfo: AuthInfo[Account]): Future[Option[AccessToken]] =
-      OauthAccessToken.findByAuthorized(authInfo.user, authInfo.clientId.getOrElse(""))
+      oauthAccessTokenDao.findByAuthorized(authInfo.user, authInfo.clientId.getOrElse(""))
           .map { optionVal =>
             optionVal.map { accessToken =>
               toAccessToken(accessToken)
@@ -60,8 +67,8 @@ class OAuthController extends Controller with OAuth2Provider {
     override def createAccessToken(authInfo: AuthInfo[Account]): Future[AccessToken] = {
       val clientId = authInfo.clientId.getOrElse(throw new InvalidClient())
       for {
-        oauthClient <- OauthClient.findByClientId(clientId)
-        oauthAccessToken <- OauthAccessToken.create(authInfo.user, oauthClient.get)
+        oauthClient <- oauthClientDao.findByClientId(clientId)
+        oauthAccessToken <- oauthAccessTokenDao.create(authInfo.user, oauthClient.get)
       } yield toAccessToken(oauthAccessToken)
     }
 
@@ -79,12 +86,12 @@ class OAuthController extends Controller with OAuth2Provider {
     override def findUser(request: AuthorizationRequest): Future[Option[Account]] = {
       request match {
         case request: PasswordRequest =>
-          Account.authenticate(request.username, request.password)
+          accountDao.authenticate(request.username, request.password)
         case request: ClientCredentialsRequest =>
           request.clientCredential match {
             case Some(credential) =>
-              OauthClient.findClientCredentials(credential.clientId, credential.clientSecret.getOrElse(""))
-                  .flatMap(oauthClient => Account.findById(oauthClient.get.ownerId))
+              oauthClientDao.findClientCredentials(credential.clientId, credential.clientSecret.getOrElse(""))
+                  .flatMap(oauthClient => accountDao.findById(oauthClient.get.ownerId))
             case None =>
               Future.successful(None)
           }
@@ -97,9 +104,9 @@ class OAuthController extends Controller with OAuth2Provider {
 
     override def findAuthInfoByRefreshToken(refreshToken: String): Future[Option[AuthInfo[Account]]] = {
       for {
-        oauthAccessToken <- OauthAccessToken.findByRefreshToken(refreshToken)
-        account <- Account.findById(oauthAccessToken.get.accountId)
-        client <- OauthClient.findByClientId(oauthAccessToken.get.oauthClientId)
+        oauthAccessToken <- oauthAccessTokenDao.findByRefreshToken(refreshToken)
+        account <- accountDao.findById(oauthAccessToken.get.accountId)
+        client <- oauthClientDao.findClientId(oauthAccessToken.get.oauthClientId)
       } yield {
         Option(AuthInfo(
           user = account.get,
@@ -112,8 +119,8 @@ class OAuthController extends Controller with OAuth2Provider {
 
     override def refreshAccessToken(authInfo: AuthInfo[Account], refreshToken: String): Future[AccessToken] = {
       for {
-        client <- OauthClient.findByClientId(authInfo.clientId.get)
-        accessToken <- OauthAccessToken.refresh(authInfo.user, client.get)
+        client <- oauthClientDao.findByClientId(authInfo.clientId.get)
+        accessToken <- oauthAccessTokenDao.refresh(authInfo.user, client.get)
       } yield {
         toAccessToken(accessToken)
       }
@@ -123,27 +130,25 @@ class OAuthController extends Controller with OAuth2Provider {
 
     override def findAuthInfoByCode(code: String): Future[Option[AuthInfo[Account]]] = {
       for {
-          authorization <- OauthAuthorizationCode.findByCode(code)
-          account <- Account.findById(authorization.get.accountId)
-          client <- OauthClient.findByClientId(authorization.get.oauthClientId)
-        } yield {
-          Option(AuthInfo(
+          authorization <- oauthAuthorizationCodeDao.findByCode(code)
+          account <- accountDao.findById(authorization.get.accountId)
+          client <- oauthClientDao.findClientId(authorization.get.oauthClientId)
+        } yield Some(AuthInfo(
             user = account.get,
             clientId = Some(client.get.clientId),
             scope = None,
             redirectUri = authorization.get.redirectUri
           ))
-        }
     }
 
     override def deleteAuthCode(code: String): Future[Unit] = {
-      Future.successful(OauthAuthorizationCode.delete(code))
+      Future.successful(oauthAuthorizationCodeDao.delete(code))
     }
 
     // Protected resource
 
     override def findAccessToken(token: String): Future[Option[AccessToken]] = {
-      OauthAccessToken.findByAccessToken(token).map { oauthAccessToken =>
+      oauthAccessTokenDao.findByAccessToken(token).map { oauthAccessToken =>
         oauthAccessToken.map {
           accessToken => toAccessToken(accessToken)
         }}
@@ -151,17 +156,15 @@ class OAuthController extends Controller with OAuth2Provider {
 
     override def findAuthInfoByAccessToken(accessToken: AccessToken): Future[Option[AuthInfo[Account]]] = {
       for {
-        accessToken <- OauthAccessToken.findByAccessToken(accessToken.token)
-        account <- Account.findById(accessToken.get.accountId)
-        client <- OauthClient.findByClientId(accessToken.get.oauthClientId)
-      } yield {
-        Option(AuthInfo(
+        accessToken <- oauthAccessTokenDao.findByAccessToken(accessToken.token)
+        account <- accountDao.findById(accessToken.get.accountId)
+        client <- oauthClientDao.findByClientId(accessToken.get.accessToken)
+      } yield Some(AuthInfo(
           user = account.get,
           clientId = Some(client.get.clientId),
           scope = None,
           redirectUri = None
         ))
-      }
     }
   }
 }
