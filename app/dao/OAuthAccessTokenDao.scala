@@ -30,7 +30,7 @@ class OAuthAccessTokenDao @Inject()(protected val dbConfigProvider: DatabaseConf
     val refreshToken = randomString(40)
     val createdAt = new DateTime()
 
-    dbConfig.db.run(DBIO.seq(oauthtokens += OauthAccessToken(0, account.id, client.clientId, accessToken, refreshToken, createdAt))).flatMap(_ => {
+    dbConfig.db.run(DBIO.seq(oauthtokens += OauthAccessToken(0, account.id, client.id, accessToken, refreshToken, createdAt))).flatMap(_ => {
       //We will definitely have the access token here!
       findByAccessToken(accessToken).map {accessToken => accessToken match {
         case _ => accessToken.get
@@ -39,7 +39,7 @@ class OAuthAccessTokenDao @Inject()(protected val dbConfigProvider: DatabaseConf
   }
 
   def delete(account: Account, client: OauthClient): Future[Int] = {
-    val query:Query[OauthAccessTokenTableDef, OauthAccessToken, Seq] = oauthtokens.filter(oauth => oauth.accountId === account.id && oauth.oauthClientId === client.clientId)
+    val query:Query[OauthAccessTokenTableDef, OauthAccessToken, Seq] = oauthtokens.filter(oauth => oauth.accountId === account.id && oauth.oauthClientId === client.id)
     dbConfig.db.run(query.delete).map(id => id)
   }
 
@@ -53,8 +53,8 @@ class OAuthAccessTokenDao @Inject()(protected val dbConfigProvider: DatabaseConf
     dbConfig.db.run(query.result.headOption).map(oauthAccessToken => oauthAccessToken)
   }
 
-  def findByAuthorized(account: Account, clientId: String): Future[Option[OauthAccessToken]] = {
-    val query:Query[OauthAccessTokenTableDef, OauthAccessToken, Seq] = oauthtokens.filter(oauth => oauth.accountId === account.id && oauth.oauthClientId === clientId)
+  def findByAuthorized(account: Account, accessToken: String): Future[Option[OauthAccessToken]] = {
+    val query:Query[OauthAccessTokenTableDef, OauthAccessToken, Seq] = oauthtokens.filter(oauth => oauth.accountId === account.id && oauth.accessToken === accessToken)
     dbConfig.db.run(query.result.headOption).map(oauthAccessToken => oauthAccessToken)
   }
 

@@ -22,7 +22,7 @@ class OAuthAuthorizationCodeDao @Inject()(protected val dbConfigProvider: Databa
 
   def findByCode(code: String): Future[Option[OauthAuthorizationCode]] = {
     val expireAt = new DateTime().minusMinutes(30)
-    val query:Query[OauthAuthorizationCodeTableDef, OauthAuthorizationCode, Seq] = oauthcodes.filter(authcode => (authcode.code === code) && (authcode.createdAt > expireAt))
+    val query:Query[OauthAuthorizationCodeTableDef, OauthAuthorizationCode, Seq] = oauthcodes.filter(authcode => authcode.code === code && authcode.createdAt > expireAt)
     dbConfig.db.run(query.result.headOption).map(oauthCode => oauthCode)
   }
 

@@ -33,4 +33,9 @@ class OAuthClientDao @Inject()(protected val dbConfigProvider: DatabaseConfigPro
     val query:Query[OauthClientTableDef, OauthClient, Seq] = clients.filter(_.clientId === clientId).filter(client => client.clientSecret === clientSecret && client.grantType === "client_credentials")
     dbConfig.db.run(query.result.headOption).map(oauthClient => oauthClient)
   }
+
+  def findClientId(id: Long): Future[Option[OauthClient]] = {
+    val query:Query[OauthClientTableDef, OauthClient, Seq] = clients.filter(_.id === id)
+    dbConfig.db.run(query.result.headOption).map(oauthClient => oauthClient)
+  }
 }

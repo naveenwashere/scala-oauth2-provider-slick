@@ -106,7 +106,7 @@ class OAuthController @Inject()(accountDao: AccountDao,
       for {
         oauthAccessToken <- oauthAccessTokenDao.findByRefreshToken(refreshToken)
         account <- accountDao.findById(oauthAccessToken.get.accountId)
-        client <- oauthClientDao.findByClientId(oauthAccessToken.get.oauthClientId)
+        client <- oauthClientDao.findClientId(oauthAccessToken.get.oauthClientId)
       } yield {
         Option(AuthInfo(
           user = account.get,
@@ -132,15 +132,13 @@ class OAuthController @Inject()(accountDao: AccountDao,
       for {
           authorization <- oauthAuthorizationCodeDao.findByCode(code)
           account <- accountDao.findById(authorization.get.accountId)
-          client <- oauthClientDao.findByClientId(authorization.get.oauthClientId)
-        } yield {
-          Option(AuthInfo(
+          client <- oauthClientDao.findClientId(authorization.get.oauthClientId)
+        } yield Some(AuthInfo(
             user = account.get,
             clientId = Some(client.get.clientId),
             scope = None,
             redirectUri = authorization.get.redirectUri
           ))
-        }
     }
 
     override def deleteAuthCode(code: String): Future[Unit] = {
@@ -160,15 +158,13 @@ class OAuthController @Inject()(accountDao: AccountDao,
       for {
         accessToken <- oauthAccessTokenDao.findByAccessToken(accessToken.token)
         account <- accountDao.findById(accessToken.get.accountId)
-        client <- oauthClientDao.findByClientId(accessToken.get.oauthClientId)
-      } yield {
-        Option(AuthInfo(
+        client <- oauthClientDao.findByClientId(accessToken.get.accessToken)
+      } yield Some(AuthInfo(
           user = account.get,
           clientId = Some(client.get.clientId),
           scope = None,
           redirectUri = None
         ))
-      }
     }
   }
 }

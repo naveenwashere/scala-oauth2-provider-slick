@@ -3,15 +3,8 @@ package models
 import java.sql.Timestamp
 
 import org.joda.time.DateTime
-import play.api.Play.current
-import play.api.db.slick.DatabaseConfigProvider
-import slick.backend.DatabaseConfig
-import slick.driver.JdbcProfile
 import slick.driver.MySQLDriver.api._
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery, Tag}
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 case class OauthClient(
   id: Long,
