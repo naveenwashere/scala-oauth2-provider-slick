@@ -10,7 +10,9 @@ CREATE TABLE account (
 ) DEFAULT CHARSET=utf8;
 
 INSERT INTO account (email, PASSWORD)
-VALUES ('naveenwashere@yahoo.com','c6e2f08f1da18c37fc099eeb248f0f3408051503');
+VALUES (1, 'bob@example.com', '48181acd22b3edaebc8a447868a7df7ce629920a');
+INSERT INTO account (email, PASSWORD)
+VALUES (2, 'alice@example.com', '522b276a356bdf39013dfabea2cd43e141ecc9e8');
 
 CREATE TABLE oauth_client (
   id BIGINT(20) NOT NULL AUTO_INCREMENT,
@@ -26,8 +28,12 @@ CREATE TABLE oauth_client (
   CONSTRAINT FOREIGN KEY (owner_id) REFERENCES account (id) ON DELETE CASCADE
 ) DEFAULT CHARSET=utf8;
 
-INSERT INTO oauth_client (owner_id, grant_type, client_id, client_secret, redirect_uri)
-VALUES (1,'password','89b8f0ba-9de3-4464-a005-8fb9deb62061','JUoeOv7jEZYm-iBPgBAXHA','');
+INSERT INTO oauth_client(owner_id, grant_type, client_id, client_secret)
+  VALUES (1, 'client_credentials', 'bob_client_id', 'bob_client_secret');
+INSERT INTO oauth_client(owner_id, grant_type, client_id, client_secret, redirect_uri)
+  VALUES (2, 'authorization_code', 'alice_client_id', 'alice_client_secret', 'http://localhost:3000/callback');
+INSERT INTO oauth_client(owner_id, grant_type, client_id, client_secret)
+  VALUES (2, 'password', 'alice_client_id2', 'alice_client_secret2');
 
 CREATE TABLE oauth_access_token (
   id BIGINT(20) NOT NULL AUTO_INCREMENT,
@@ -57,4 +63,4 @@ CREATE TABLE oauth_authorization_code
 );
 
 INSERT INTO oauth_authorization_code(account_id, oauth_client_id, code, redirect_uri)
-VALUES (1, 1, 'bob_code', 'http://localhost:3000/callback');
+VALUES (1, 2, 'bob_code', 'http://localhost:3000/callback');
