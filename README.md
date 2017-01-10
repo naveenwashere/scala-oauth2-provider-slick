@@ -1,13 +1,15 @@
-# scala-oauth2-provider example with Skinny-ORM
+# scala-oauth2-provider example with Slick
 
 - [scala-oauth2-provider](https://github.com/nulab/scala-oauth2-provider) 0.17.x
 - [Play Framework](https://www.playframework.com/) 2.5.x
-- [Skinny-ORM](http://skinny-framework.org/documentation/orm.html) 2.0.x
+- [Slick-OFM](http://slick.lightbend.com/) 3.1.1
+
+Inspired from [tsuyoshizawa's](https://github.com/tsuyoshizawa) [implementation](https://github.com/tsuyoshizawa/scala-oauth2-provider-example-skinny-orm) of the oauth2 server using Skinny ORM. I instead wanted to use Slick Functional Relational Mapper to leverage the performance advantages that it provided.
 
 ## Running Play Framework with evolutions
 
 ```
-$ sbt -Dplay.evolutions.db.default.autoApply=true run
+$ activator run
 ```
 
 ## Try to create access tokens using curl
