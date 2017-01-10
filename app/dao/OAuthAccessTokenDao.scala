@@ -1,11 +1,12 @@
 package dao
 
 import java.security.SecureRandom
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 
 import com.github.tototoshi.slick.MySQLJodaSupport._
 import models._
 import org.joda.time.DateTime
+import play.api.db.slick.DatabaseConfigProvider
 import slick.backend.DatabaseConfig
 import slick.driver.JdbcProfile
 import slick.driver.MySQLDriver.api._
@@ -18,7 +19,10 @@ import scala.util.Random
 /**
   * Created by naveenkumar on 10/1/17.
   */
-class OAuthAccessTokenDao @Inject()(dbConfig: DatabaseConfig[JdbcProfile], oauthtokens: TableQuery[OauthAccessTokenTableDef])(implicit ctx: ExecutionContext) {
+@Singleton
+class OAuthAccessTokenDao @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(implicit ctx: ExecutionContext) {
+  val dbConfig = dbConfigProvider.get[JdbcProfile]
+  private val oauthtokens = TableQuery[OauthAccessTokenTableDef]
 
   def create(account: Account, client: OauthClient): Future[OauthAccessToken] = {
     def randomString(length: Int) = new Random(new SecureRandom()).alphanumeric.take(length).mkString
@@ -29,7 +33,7 @@ class OAuthAccessTokenDao @Inject()(dbConfig: DatabaseConfig[JdbcProfile], oauth
     dbConfig.db.run(DBIO.seq(oauthtokens += OauthAccessToken(0, account.id, client.clientId, accessToken, refreshToken, createdAt))).flatMap(_ => {
       //We will definitely have the access token here!
       findByAccessToken(accessToken).map {accessToken => accessToken match {
-        case Some(accessToken) => accessToken
+        case _ => accessToken.get
       }}
     })
   }

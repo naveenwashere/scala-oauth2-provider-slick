@@ -1,6 +1,6 @@
 package controllers
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 
 import dao.{AccountDao, OAuthAccessTokenDao, OAuthAuthorizationCodeDao, OAuthClientDao}
 import models._
@@ -11,7 +11,11 @@ import scala.concurrent.Future
 import scalaoauth2.provider.OAuth2ProviderActionBuilders._
 import scalaoauth2.provider._
 
-class OAuthController @Inject()(accountDao: AccountDao, oauthAccessTokenDao: OAuthAccessTokenDao, oauthAuthorizationCodeDao: OAuthAuthorizationCodeDao, oauthClientDao: OAuthClientDao) extends Controller with OAuth2Provider {
+@Singleton
+class OAuthController @Inject()(accountDao: AccountDao,
+                                oauthAccessTokenDao: OAuthAccessTokenDao,
+                                oauthAuthorizationCodeDao: OAuthAuthorizationCodeDao,
+                                oauthClientDao: OAuthClientDao) extends Controller with OAuth2Provider {
 
   implicit val authInfoWrites = new Writes[AuthInfo[Account]] {
     def writes(authInfo: AuthInfo[Account]): JsObject = {
