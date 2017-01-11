@@ -31,7 +31,7 @@ NOTE: A service needs to generate `code` in advance. In this example, the code h
 ### Password
 
 ```
-$ curl http://localhost:9000/oauth/access_token -X POST -d "client_id=alice_client_id2" -d "client_secret=alice_client_secret2" -d "username=alice@example.com" -d "password=alice" -d "grant_type=password"
+$ curl http://localhost:9000/oauth/access_token -X POST -d "client_id=alice_client_id2" -d "client_secret=alice_client_secret2" -d "username=alice@example.com" -d "password=522b276a356bdf39013dfabea2cd43e141ecc9e8" -d "grant_type=password"
 ```
 
 ### Refresh token
