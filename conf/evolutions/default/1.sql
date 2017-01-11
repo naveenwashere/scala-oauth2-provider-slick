@@ -10,9 +10,9 @@ CREATE TABLE account (
 ) DEFAULT CHARSET=utf8;
 
 INSERT INTO account (email, PASSWORD)
-VALUES (1, 'bob@example.com', '48181acd22b3edaebc8a447868a7df7ce629920a');
+VALUES ('bob@example.com', '48181acd22b3edaebc8a447868a7df7ce629920a');
 INSERT INTO account (email, PASSWORD)
-VALUES (2, 'alice@example.com', '522b276a356bdf39013dfabea2cd43e141ecc9e8');
+VALUES ('alice@example.com', '522b276a356bdf39013dfabea2cd43e141ecc9e8');
 
 CREATE TABLE oauth_client (
   id BIGINT(20) NOT NULL AUTO_INCREMENT,
