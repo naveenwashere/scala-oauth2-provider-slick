@@ -21,7 +21,10 @@ class OAuthClientDao @Inject()(protected val dbConfigProvider: DatabaseConfigPro
 
   def validate(clientId: String, clientSecret: String, grantType: String): Future[Boolean] = {
     val query:Query[OauthClientTableDef, OauthClient, Seq] = clients.filter(_.clientId === clientId).filter(_.clientSecret === clientSecret)
-    dbConfig.db.run(query.result.headOption).map(client => grantType == client.get.grantType || grantType == "refresh_token").map(booleanVal => booleanVal)
+    dbConfig.db.run(query.result.headOption).map(client => client match {
+      case Some(oauthClient) => (grantType == oauthClient.grantType || grantType == "refresh_token")
+      case None => false
+    })
   }
 
   def findByClientId(clientId: String): Future[Option[OauthClient]] = {

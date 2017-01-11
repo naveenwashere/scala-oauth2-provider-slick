@@ -25,6 +25,9 @@ class AccountDao @Inject()(protected val dbConfigProvider: DatabaseConfigProvide
 
   def findById(id: Long): Future[Option[Account]] = {
     val query:Query[AccountTableDef, Account, Seq] = accounts.filter(_.id === id)
-    dbConfig.db.run(query.result.headOption).map(account => account)
+    dbConfig.db.run(query.result.headOption).map(account => account match {
+      case Some(account) => Some(account)
+      case None => None
+    })
   }
 }

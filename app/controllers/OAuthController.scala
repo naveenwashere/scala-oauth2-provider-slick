@@ -52,8 +52,7 @@ class OAuthController @Inject()(accountDao: AccountDao,
 
     override def validateClient(request: AuthorizationRequest): Future[Boolean] = {
       val clientCredential = request.clientCredential.get
-      oauthClientDao.validate(clientCredential.clientId, clientCredential.clientSecret.getOrElse(""), request.grantType)
-        .map(success => success)
+      oauthClientDao.validate(clientCredential.clientId, clientCredential.clientSecret.getOrElse(""), request.grantType).map(success => success)
     }
 
     override def getStoredAccessToken(authInfo: AuthInfo[Account]): Future[Option[AccessToken]] =
@@ -103,18 +102,19 @@ class OAuthController @Inject()(accountDao: AccountDao,
     // Refresh token grant
 
     override def findAuthInfoByRefreshToken(refreshToken: String): Future[Option[AuthInfo[Account]]] = {
-      for {
-        oauthAccessToken <- oauthAccessTokenDao.findByRefreshToken(refreshToken)
-        account <- accountDao.findById(oauthAccessToken.get.accountId)
-        client <- oauthClientDao.findClientId(oauthAccessToken.get.oauthClientId)
-      } yield {
-        Option(AuthInfo(
-          user = account.get,
-          clientId = Some(client.get.clientId),
-          scope = None,
-          redirectUri = None
-        ))
-      }
+      val oauthAccessToken = oauthAccessTokenDao.findByRefreshToken(refreshToken)
+      oauthAccessToken.flatMap(oauthAccessToken => oauthAccessToken match {
+        case Some(oauthAccessToken) => accountDao.findById(oauthAccessToken.accountId).flatMap(account => account match {
+          case Some(account) => oauthClientDao.findClientId(oauthAccessToken.oauthClientId).map(client => Some(AuthInfo(
+            user = account,
+            clientId = Some(client.get.clientId),
+            scope = None,
+            redirectUri = client.get.redirectUri
+          )))
+          case None => Future.successful(None)
+        })
+        case None => Future.successful(None)
+      })
     }
 
     override def refreshAccessToken(authInfo: AuthInfo[Account], refreshToken: String): Future[AccessToken] = {
@@ -129,16 +129,19 @@ class OAuthController @Inject()(accountDao: AccountDao,
     // Authorization code grant
 
     override def findAuthInfoByCode(code: String): Future[Option[AuthInfo[Account]]] = {
-      for {
-          authorization <- oauthAuthorizationCodeDao.findByCode(code)
-          account <- accountDao.findById(authorization.get.accountId)
-          client <- oauthClientDao.findClientId(authorization.get.oauthClientId)
-        } yield Some(AuthInfo(
-            user = account.get,
-            clientId = Some(client.get.clientId),
-            scope = None,
-            redirectUri = authorization.get.redirectUri
-          ))
+        val authorization = oauthAuthorizationCodeDao.findByCode(code)
+        authorization.flatMap(authorization => authorization match {
+          case Some(authorization) => accountDao.findById(authorization.accountId).flatMap(account => account match {
+            case Some(account) => oauthClientDao.findClientId(authorization.oauthClientId).map(client => Some(AuthInfo(
+              user = account,
+              clientId = Some(client.get.clientId),
+              scope = None,
+              redirectUri = authorization.redirectUri
+            )))
+            case None => Future.successful(None)
+          })
+          case None => Future.successful(None)
+        })
     }
 
     override def deleteAuthCode(code: String): Future[Unit] = {
