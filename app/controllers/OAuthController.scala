@@ -158,16 +158,19 @@ class OAuthController @Inject()(accountDao: AccountDao,
     }
 
     override def findAuthInfoByAccessToken(accessToken: AccessToken): Future[Option[AuthInfo[Account]]] = {
-      for {
-        accessToken <- oauthAccessTokenDao.findByAccessToken(accessToken.token)
-        account <- accountDao.findById(accessToken.get.accountId)
-        client <- oauthClientDao.findByClientId(accessToken.get.accessToken)
-      } yield Some(AuthInfo(
-          user = account.get,
-          clientId = Some(client.get.clientId),
-          scope = None,
-          redirectUri = None
-        ))
+      val token = oauthAccessTokenDao.findByAccessToken(accessToken.token)
+      token.flatMap(token => token match {
+        case Some(token) => accountDao.findById(token.accountId).flatMap(account => account match {
+          case Some(account) => oauthClientDao.findClientId(token.oauthClientId).map(client => Some(AuthInfo(
+            user = account,
+            clientId = Some(client.get.clientId),
+            scope = None,
+            redirectUri = None
+          )))
+          case None => Future.successful(None)
+        })
+        case None => Future.successful(None)
+      })
     }
   }
 }
