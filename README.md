@@ -103,7 +103,7 @@ $ curl http://localhost:9000/oauth/access_token -X POST -d "client_id=alice_clie
 {"token_type":"Bearer","access_token":"CCWd7AGHeEeV3YNOsBhKSK4OZw5DoudyWWQDRkvZ","expires_in":3599,"refresh_token":"gymRoFktrUSYOmVCE0EwoZKENLDCq4CaxaXQG03O"}
 
 naveenkumar at Naveens-MacBook-Pro in ~
-$ curl http://localhost:9000/oauth/access_token -X POST -d "client_id=alice_client_id2" -d "client_secret=alice_client_secret2" -d "username=alice@example.com" -d "password=522b276a356bdf39013dfabea2cd43e141ecc9e8" -d "grant_type=passwor"
+$ curl http://localhost:9000/oauth/access_token -X POST -d "client_id=alice_client_id2" -d "client_secret=alice_client_secret2" -d "username=alice@example.com" -d "password=522b276a356bdf39013dfabea2cd43e141ecc9e8" -d "grant_type=password"
 {"error":"unsupported_grant_type","error_description":"passwor is not supported"}
 
 naveenkumar at Naveens-MacBook-Pro in ~
@@ -123,8 +123,8 @@ $ curl http://localhost:9000/oauth/access_token -X POST -d "client_id=alice_clie
 {"error":"invalid_client","error_description":"Invalid client is detected"}
 
 naveenkumar at Naveens-MacBook-Pro in ~
-$ curl http://localhost:9000/oauth/access_token -X POST -d "client_id=alice_client_id2" -d "client_secret=alice_client_secret2" -d "refresh_token=${refresh_token}" -d "grant_type=refresh_toke"
-{"error":"unsupported_grant_type","error_description":"refresh_toke is not supported"}
+$ curl http://localhost:9000/oauth/access_token -X POST -d "client_id=alice_client_id2" -d "client_secret=alice_client_secret2" -d "refresh_token=${refresh_token}" -d "grant_type=refresh_token"
+{"error":"unsupported_grant_type","error_description":"refresh_token is not supported"}
 
 naveenkumar at Naveens-MacBook-Pro in ~
 $ curl http://localhost:9000/oauth/access_token -X POST -d "client_id=alice_client_id2" -d "client_secret=alice_client_secret2" -d "refresh_token=${refresh_token}" -d "grant_type=refresh_token"
